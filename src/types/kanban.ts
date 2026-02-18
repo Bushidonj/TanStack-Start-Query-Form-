@@ -36,6 +36,7 @@ export interface Card {
   tags: Tag[];
   comments: Comment[];
   attachments?: string[];
+  newComment?: string;
 }
 
 export interface Column {

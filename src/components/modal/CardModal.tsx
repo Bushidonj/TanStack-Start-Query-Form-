@@ -54,12 +54,30 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
             priority: card.priority,
             description: card.description || '',
             tags: card.tags,
+            comments: card.comments,
+            newComment: '',
         },
         onSubmit: async ({ value }) => {
-            onUpdate({
+            const updatedCard = {
                 ...card,
                 ...value,
-            });
+            };
+            
+            // Se houver um novo comentário, adicionar aos comentários existentes
+            if (value.newComment && value.newComment.trim()) {
+                const newCommentObj = {
+                    id: `comment-${Date.now()}`,
+                    author: 'Allan Azevedo', // TODO: Pegar usuário logado
+                    content: value.newComment.trim(),
+                    createdAt: new Date().toISOString(),
+                };
+                updatedCard.comments = [...(updatedCard.comments || []), newCommentObj];
+            }
+            
+            // Limpar o campo newComment após salvar
+            updatedCard.newComment = '';
+            
+            onUpdate(updatedCard);
             onClose();
         },
     });
@@ -493,15 +511,24 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
                                     </div>
                                 ))}
 
-                                {/* New Comment Input Simulation */}
+                                {/* New Comment Input */}
                                 <div className="flex gap-3">
                                     <div className="w-8 h-8 rounded-full bg-notion-hover border border-notion-border flex items-center justify-center text-xs font-bold text-notion-text-muted">
                                         U
                                     </div>
                                     <div className="flex-1">
-                                        <input
-                                            className="w-full bg-transparent border border-notion-border rounded-lg p-2 text-sm outline-none focus:border-notion-text-muted/50 transition-colors"
-                                            placeholder="Escreva um comentário..."
+                                        <form.Field
+                                            name="newComment"
+                                            children={(field) => (
+                                                <input
+                                                    name={field.name}
+                                                    value={field.state.value || ''}
+                                                    onBlur={field.handleBlur}
+                                                    onChange={(e) => field.handleChange(e.target.value)}
+                                                    className="w-full bg-transparent border border-notion-border rounded-lg p-2 text-sm outline-none focus:border-notion-text-muted/50 transition-colors"
+                                                    placeholder="Escreva um comentário..."
+                                                />
+                                            )}
                                         />
                                     </div>
                                 </div>
