@@ -25,17 +25,23 @@ export interface Comment {
   createdAt: string;
 }
 
+export interface ResponsibleUser {
+  id: string;
+  name: string;
+}
+
 export interface Card {
   id: string;
   title: string;
   description?: string;
-  responsible: string[];
+  responsible: ResponsibleUser[];
   status: CardStatus;
   deadline: string;
   priority: Priority;
   tags: Tag[];
   comments: Comment[];
   attachments?: string[];
+  newComment?: string;
 }
 
 export interface Column {

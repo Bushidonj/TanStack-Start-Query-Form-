@@ -24,7 +24,7 @@ export const Route = createFileRoute('/')({
 
 function KanbanPage() {
   const router = useRouter()
-  const { cards, moveCard, updateCard, addCard, isLoading } = useKanban()
+  const { cards, moveCard, updateCard, addCard, isInitialLoading, isMutationPending } = useKanban()
   const [activeCard, setActiveCard] = useState<Card | null>(null)
   const [editingCard, setEditingCard] = useState<Card | null>(null)
   const [isMounted, setIsMounted] = useState(false)
@@ -72,30 +72,38 @@ function KanbanPage() {
     if (isActiveACard && isOverACard) {
       const overCardStatus = over.data.current?.card.status
       if (active.data.current?.card.status !== overCardStatus) {
-        moveCard(activeId as string, overCardStatus)
+        moveCard({ cardId: activeId as string, newStatus: overCardStatus })
       }
     }
 
     // Dropping a Card over a Column
     if (isActiveACard && isOverAColumn) {
-      moveCard(activeId as string, overId as CardStatus)
+      moveCard({ cardId: activeId as string, newStatus: overId as CardStatus })
     }
   }
 
   return (
     <div className="flex flex-col h-full bg-notion-bg">
       <header className="px-8 pt-8 pb-4">
-        <h1 className="text-3xl font-bold flex items-center gap-2 text-notion-text">
-          <span>🚀</span>
-          Kanban / Backlog de Produto
-        </h1>
+        <div className="flex items-center justify-between group">
+          <h1 className="text-3xl font-bold flex items-center gap-2 text-notion-text">
+            <span>🚀</span>
+            Kanban / Backlog de Produto
+          </h1>
+          {isMutationPending && (
+            <div className="flex items-center gap-2 text-[11px] text-notion-text-muted animate-in fade-in duration-300">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              <span>Salvando alterações...</span>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-4 mt-6 text-sm text-notion-text-muted border-b border-notion-border pb-2">
           <div className="px-2 py-1 bg-notion-hover text-notion-text rounded cursor-pointer">Board</div>
           <div className="px-2 py-1 hover:bg-notion-hover rounded cursor-pointer transition-colors text-notion-text-muted">Project Info</div>
         </div>
       </header>
 
-      {!isMounted || isLoading ? (
+      {!isMounted || isInitialLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <div className="w-8 h-8 border-2 border-notion-text/20 border-t-notion-text rounded-full animate-spin" />
@@ -153,13 +161,12 @@ function KanbanPage() {
             document.body
           )}
 
-          {editingCard && createPortal(
+          {editingCard && (
             <CardModal
-              card={editingCard}
+              card={cards.find(c => c.id === editingCard.id) || editingCard}
               onClose={() => setEditingCard(null)}
               onUpdate={editingCard.id.startsWith('new-') ? (card) => addCard(card) : updateCard}
-            />,
-            document.body
+            />
           )}
         </DndContext>
       )}

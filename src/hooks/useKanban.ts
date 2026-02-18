@@ -1,79 +1,85 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { INITIAL_CARDS } from '../mock/kanbanData';
-import type { Card, CardStatus } from '../types/kanban';
-
-// Simulation of API calls
-const fetchCards = async (): Promise<Card[]> => {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return [...INITIAL_CARDS];
-};
+import { taskService } from '../services/task.service';
+import type { CardStatus } from '../types/kanban';
 
 export function useKanban() {
   const queryClient = useQueryClient();
 
-  // Query to fetch cards
+  // Query to fetch cards do backend REAL
   const { data: cards = [], isPending: isQueryPending } = useQuery({
     queryKey: ['cards'],
-    queryFn: fetchCards,
-    staleTime: Infinity, // Keep in memory
+    queryFn: taskService.getTasks,
+    staleTime: 1000 * 60, // 1 minuto
   });
 
-  // Mutation to move card
-  const moveCardMutation = useMutation({
-    mutationFn: async ({ cardId, newStatus }: { cardId: string; newStatus: CardStatus }) => {
-      // Logic would be here for actual API call
-      return { cardId, newStatus };
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(['cards'], (prev: Card[] | undefined) => {
-        if (!prev) return [];
-        return prev.map((card) =>
-          card.id === data.cardId ? { ...card, status: data.newStatus } : card
-        );
-      });
+  // Log para debug
+  console.log('[useKanban] 🔍 Cards data:', cards);
+  console.log('[useKanban] 📊 Cards length:', cards.length);
+  console.log('[useKanban] ⏳ Is pending:', isQueryPending);
+
+  if (cards.length > 0) {
+    console.log('[useKanban] ✅ First card:', cards[0]);
+  }
+
+  // Mutation para criar card
+  const createCardMutation = useMutation({
+    mutationFn: taskService.createTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
     },
   });
 
-  // Mutation to update card (includes status change inside modal)
+  // Mutation para atualizar card
   const updateCardMutation = useMutation({
-    mutationFn: async (updatedCard: Card) => updatedCard,
-    onSuccess: (data) => {
-      queryClient.setQueryData(['cards'], (prev: Card[] | undefined) => {
-        if (!prev) return [];
-        return prev.map((card) => (card.id === data.id ? data : card));
-      });
+    mutationFn: taskService.updateTask,
+    onMutate: async (updatedCard) => {
+      // Cancelar queries em andamento
+      await queryClient.cancelQueries({ queryKey: ['cards'] });
+      
+      // Snapshot do estado anterior
+      const previousCards = queryClient.getQueryData(['cards']);
+      
+      // Atualização otimista
+      queryClient.setQueryData(['cards'], (old: any[] = []) => 
+        old.map(card => card.id === updatedCard.id ? updatedCard : card)
+      );
+      
+      return { previousCards };
+    },
+    onError: (_error, _updatedCard, context: any) => {
+      // Rollback em caso de erro
+      queryClient.setQueryData(['cards'], context.previousCards);
+    },
+    onSettled: () => {
+      // Refetch para garantir consistência
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
     },
   });
 
-  // Mutation to add card
-  const addCardMutation = useMutation({
-    mutationFn: async (card: Card) => card,
-    onSuccess: (data) => {
-      queryClient.setQueryData(['cards'], (prev: Card[] | undefined) => {
-        if (!prev) return [data];
-        return [...prev, data];
-      });
+  // Mutation para mover card (mudar status)
+  const moveCardMutation = useMutation({
+    mutationFn: ({ cardId, newStatus }: { cardId: string; newStatus: CardStatus }) => 
+      taskService.moveTask(cardId, newStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
     },
   });
 
-  // Mutation to delete card
+  // Mutation para deletar card
   const deleteCardMutation = useMutation({
-    mutationFn: async (cardId: string) => cardId,
-    onSuccess: (cardId) => {
-      queryClient.setQueryData(['cards'], (prev: Card[] | undefined) => {
-        if (!prev) return [];
-        return prev.filter((card) => card.id !== cardId);
-      });
+    mutationFn: taskService.deleteTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
     },
   });
 
   return {
     cards,
-    moveCard: (cardId: string, newStatus: CardStatus) => moveCardMutation.mutate({ cardId, newStatus }),
+    addCard: createCardMutation.mutate,
     updateCard: updateCardMutation.mutate,
-    addCard: addCardMutation.mutate,
+    moveCard: moveCardMutation.mutate,
     deleteCard: deleteCardMutation.mutate,
-    isLoading: isQueryPending || moveCardMutation.isPending || updateCardMutation.isPending || addCardMutation.isPending || deleteCardMutation.isPending,
+    isInitialLoading: isQueryPending,
+    isMutationPending: createCardMutation.isPending || updateCardMutation.isPending || moveCardMutation.isPending || deleteCardMutation.isPending,
   };
 }

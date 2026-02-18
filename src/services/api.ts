@@ -28,41 +28,25 @@ api.interceptors.response.use(
   async (error: any) => {
     const originalRequest = error.config;
 
-    // Se o erro for 401 e não for uma tentativa de login ou refresh
+    // Se o erro for 401 e não for uma tentativa de login
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes('/auth/login') &&
-      !originalRequest.url?.includes('/auth/refresh')
+      !originalRequest.url?.includes('/auth/login')
     ) {
       originalRequest._retry = true;
 
-      try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          throw new Error('No refresh token available');
-        }
-
-        const response = await axios.post('http://localhost:3001/auth/refresh', {
-          refreshToken,
-        });
-
-        const { sessionToken, refreshToken: newRefreshToken } = response.data;
-        
-        localStorage.setItem('sessionToken', sessionToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
-
-        originalRequest.headers.Authorization = `Bearer ${sessionToken}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        console.error('Session expired, logging out...', refreshError);
-        localStorage.removeItem('sessionToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem('userEmail');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
+      console.error('Session expired, logging out...', error);
+      
+      // Limpar todos os dados de autenticação
+      localStorage.removeItem('sessionToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('userEmail');
+      
+      // Redirecionar para login
+      window.location.href = '/login';
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);

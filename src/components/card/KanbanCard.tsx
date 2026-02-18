@@ -73,14 +73,18 @@ export function KanbanCard({ card, isOverlay, onEdit }: KanbanCardProps) {
 
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex flex-col gap-1">
-                        {card.responsible.map((person) => (
-                            <div key={person} className="flex items-center gap-2">
-                                <div className="w-5 h-5 rounded-full bg-notion-hover flex items-center justify-center text-[10px] font-bold border border-notion-border text-notion-text flex-shrink-0">
-                                    {person[0]}
+                        {card.responsible.map((person) => {
+                            const name = typeof person.name === 'string' ? person.name : (typeof person === 'string' ? person : 'Usuário');
+                            const initial = name.charAt(0).toUpperCase();
+                            return (
+                                <div key={person.id || name} className="flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-notion-hover flex items-center justify-center text-[10px] font-bold border border-notion-border text-notion-text flex-shrink-0">
+                                        {initial}
+                                    </div>
+                                    <span className="text-[11px] text-notion-text-muted font-medium truncate">{name}</span>
                                 </div>
-                                <span className="text-[11px] text-notion-text-muted font-medium truncate">{person}</span>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                     <div className="flex items-center gap-2 self-start">
                         {card.comments.length > 0 && (
