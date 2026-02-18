@@ -30,6 +30,20 @@ export interface ResponsibleUser {
   name: string;
 }
 
+export interface Attachment {
+  id?: string;
+  name: string;
+  url: string;
+  size?: number;
+  type?: string;
+}
+
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Card {
   id: string;
   title: string;
@@ -40,7 +54,8 @@ export interface Card {
   priority: Priority;
   tags: Tag[];
   comments: Comment[];
-  attachments?: string[];
+  attachments?: Attachment[];
+  subtasks?: Subtask[];
   newComment?: string;
 }
 

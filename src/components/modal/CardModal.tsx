@@ -1,11 +1,43 @@
 import { useForm } from '@tanstack/react-form';
-import { X, Calendar as CalendarIcon, Tag, MessageSquare, FileText, Target, Users, CircleDot, ArrowDownCircle, ArrowUpRight, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import {
+    X,
+    Calendar as CalendarIcon,
+    Tag as TagIcon,
+    MessageSquare,
+    FileText,
+    Target,
+    Users,
+    CircleDot,
+    ArrowDownCircle,
+    ArrowUpRight,
+    ChevronLeft,
+    ChevronRight,
+    Trash2,
+    Plus,
+    FileText as FileTextIcon,
+    Paperclip,
+    MoreHorizontal
+} from 'lucide-react';
 import { authService } from '../../services/auth.service';
 import api from '../../services/api';
-import type { Card, CardStatus, Priority, ResponsibleUser } from '../../types/kanban';
+import type { Card, CardStatus, Priority, ResponsibleUser, Attachment, Tag, Comment, Subtask } from '../../types/kanban';
 import { STATUS_COLORS, STATUS_CATEGORIES, STATUS_TITLE_COLORS, MOCK_USERS, DESCRIPTION_TEMPLATES, AVAILABLE_TAGS } from '../../mock/kanbanData';
 import { useState, useRef, useEffect } from 'react';
-import { Plus, FileText as FileTextIcon } from 'lucide-react';
+import { taskService } from '../../services/task.service';
+
+interface FormValues {
+    title: string;
+    responsible: ResponsibleUser[];
+    status: CardStatus;
+    deadline: string;
+    priority: Priority;
+    description: string;
+    tags: Tag[];
+    attachments: Attachment[];
+    subtasks: Subtask[];
+    comments: Comment[];
+    newComment: string;
+}
 
 interface CardModalProps {
     card: Card;
@@ -19,6 +51,7 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [isPriorityOpen, setIsPriorityOpen] = useState(false);
     const [isTagsOpen, setIsTagsOpen] = useState(false);
+    const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
     const statusRef = useRef<HTMLDivElement>(null);
     const userRef = useRef<HTMLDivElement>(null);
     const calendarRef = useRef<HTMLDivElement>(null);
@@ -111,7 +144,6 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
             ...card,
             comments: updatedComments,
         };
-
         // Salvar no backend (background)
         try {
             await onUpdate(updatedCard);
@@ -120,6 +152,29 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
             console.error('[CardModal] ❌ Erro ao deletar comentário:', error);
             // Rollback automático via TanStack Query
         }
+    };
+
+    // Função para adicionar subtask
+    const handleAddSubtask = (field: any) => {
+        if (newSubtaskTitle.trim()) {
+            const newSubtask: Subtask = {
+                id: `subtask-${Date.now()}`,
+                title: newSubtaskTitle.trim(),
+                completed: false
+            };
+            field.handleChange([...field.state.value, newSubtask]);
+            setNewSubtaskTitle('');
+        }
+    };
+
+    // Função para alternar status da subtask
+    const toggleSubtask = (field: any, index: number) => {
+        const updatedSubtasks = [...field.state.value];
+        updatedSubtasks[index] = {
+            ...updatedSubtasks[index],
+            completed: !updatedSubtasks[index].completed
+        };
+        field.handleChange(updatedSubtasks);
     };
 
     useEffect(() => {
@@ -153,9 +208,11 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
             priority: card.priority,
             description: card.description || '',
             tags: card.tags,
+            attachments: card.attachments || [],
+            subtasks: card.subtasks || [],
             comments: card.comments,
             newComment: '',
-        },
+        } as FormValues,
         onSubmit: async ({ value }) => {
             // Não processar comentários aqui - eles são processados pelo handleAddComment
             const updatedCard = {
@@ -439,7 +496,7 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
                                 />
                             </PropertyItem>
 
-                            <PropertyItem icon={<Tag size={16} />} label="Tags">
+                            <PropertyItem icon={<TagIcon size={16} />} label="Tags">
                                 <form.Field
                                     name="tags"
                                     children={(field) => (
@@ -508,22 +565,141 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
                                 />
                             </PropertyItem>
 
-                            {/* Attachments shown as Sub-tasks */}
-                            <PropertyItem icon={<ArrowUpRight size={16} />} label="Sub-task">
-                                <div className="flex flex-col gap-2">
-                                    {card.attachments && card.attachments.length > 0 ? (
-                                        card.attachments.map(file => (
-                                            <div key={file} className="flex items-center gap-2 group/file cursor-pointer">
-                                                <FileText size={16} className="text-notion-text-muted group-hover/file:text-notion-text" />
-                                                <span className="text-sm font-bold border-b border-notion-border/60 group-hover/file:border-notion-text transition-colors">
-                                                    {file.includes('.') ? file.split('.')[0] : file}
-                                                </span>
+                            <PropertyItem icon={<CircleDot size={16} />} label="Lista de Tarefas">
+                                <form.Field
+                                    name="subtasks"
+                                    children={(field) => (
+                                        <div className="space-y-3">
+                                            {/* Subtasks List */}
+                                            <div className="flex flex-col gap-1">
+                                                {field.state.value && field.state.value.length > 0 ? (
+                                                    field.state.value.map((subtask: Subtask, index: number) => (
+                                                        <div key={subtask.id} className="flex items-center gap-2 group/subtask p-1 rounded hover:bg-notion-hover transition-colors">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={subtask.completed}
+                                                                onChange={() => toggleSubtask(field, index)}
+                                                                className="w-4 h-4 rounded border-notion-border bg-notion-sidebar text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                                                            />
+                                                            <span className={`text-sm flex-1 ${subtask.completed ? 'text-notion-text-muted line-through' : 'text-notion-text'}`}>
+                                                                {subtask.title}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const newSubtasks = field.state.value.filter((_: any, i: number) => i !== index);
+                                                                    field.handleChange(newSubtasks);
+                                                                }}
+                                                                className="opacity-0 group-hover/subtask:opacity-100 p-1 hover:bg-red-500/10 hover:text-red-400 rounded transition-all"
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <span className="text-notion-text-muted text-sm italic py-1">Nenhuma subtarefa</span>
+                                                )}
                                             </div>
-                                        ))
-                                    ) : (
-                                        <span className="text-notion-text-muted text-sm italic">Nenhum anexo</span>
+
+                                            {/* Add Subtask Input */}
+                                            <div className="flex items-center gap-2 pt-1">
+                                                <input
+                                                    type="text"
+                                                    value={newSubtaskTitle}
+                                                    onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            handleAddSubtask(field);
+                                                        }
+                                                    }}
+                                                    placeholder="Adicionar uma subtarefa..."
+                                                    className="flex-1 bg-transparent border-none text-sm p-1 focus:ring-0 placeholder:text-notion-text-muted/50"
+                                                />
+                                                {newSubtaskTitle.trim() && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAddSubtask(field)}
+                                                        className="text-[10px] bg-notion-hover px-2 py-1 rounded font-bold hover:bg-notion-border transition-colors uppercase tracking-wider text-notion-text-muted hover:text-notion-text"
+                                                    >
+                                                        Adicionar
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
                                     )}
-                                </div>
+                                />
+                            </PropertyItem>
+
+                            <PropertyItem icon={<Paperclip size={16} />} label="Anexos">
+                                <form.Field
+                                    name="attachments"
+                                    children={(field) => (
+                                        <div className="space-y-3">
+                                            {/* List of Attachments */}
+                                            <div className="flex flex-col gap-2">
+                                                {field.state.value && field.state.value.length > 0 ? (
+                                                    field.state.value.map((file: any, index: number) => {
+                                                        // Fallback para quando o anexo é apenas uma string (legado/mock)
+                                                        const fileName = typeof file === 'string' ? file : file.name;
+                                                        const fileUrl = typeof file === 'string' ? `/uploads/${file}` : file.url;
+                                                        const fileId = typeof file === 'string' ? file : (file.id || index);
+
+                                                        return (
+                                                            <div key={fileId} className="flex items-center justify-between group/file p-1.5 rounded hover:bg-notion-hover transition-colors border border-transparent hover:border-notion-border">
+                                                                <a
+                                                                    href={fileUrl.startsWith('http') ? fileUrl : `${api.defaults.baseURL}${fileUrl}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center gap-2 flex-1"
+                                                                >
+                                                                    <FileText size={16} className="text-notion-text-muted group-hover/file:text-notion-text" />
+                                                                    <span className="text-sm font-medium border-b border-transparent group-hover/file:border-notion-text-muted/30 transition-all">
+                                                                        {fileName}
+                                                                    </span>
+                                                                </a>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const newFiles = field.state.value.filter((_: any, i: number) => i !== index);
+                                                                        field.handleChange(newFiles);
+                                                                    }}
+                                                                    className="opacity-0 group-hover/file:opacity-100 p-1 hover:bg-red-500/10 hover:text-red-400 rounded transition-all"
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <span className="text-notion-text-muted text-xs italic ml-1">Nenhum anexo</span>
+                                                )}
+                                            </div>
+
+                                            {/* Upload Trigger */}
+                                            <label className="flex items-center gap-2 p-2 rounded border border-dashed border-notion-border hover:border-notion-text-muted/40 hover:bg-notion-hover cursor-pointer transition-all group">
+                                                <Plus size={14} className="text-notion-text-muted group-hover:text-notion-text" />
+                                                <span className="text-xs font-medium text-notion-text-muted group-hover:text-notion-text">Adicionar anexo</span>
+                                                <input
+                                                    type="file"
+                                                    className="hidden"
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            try {
+                                                                const uploaded = await taskService.uploadAttachment(file);
+                                                                field.handleChange([...field.state.value, uploaded]);
+                                                            } catch (err) {
+                                                                console.error('[CardModal] ❌ Erro no upload:', err);
+                                                            }
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+                                    )}
+                                />
                             </PropertyItem>
                         </div>
 

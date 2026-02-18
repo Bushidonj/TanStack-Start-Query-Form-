@@ -1,4 +1,4 @@
-import { MoreHorizontal, FileText, Calendar, MessageSquare } from 'lucide-react';
+import { MoreHorizontal, FileText, Calendar, MessageSquare, CheckSquare } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Card, Priority } from '../../types/kanban';
@@ -93,6 +93,14 @@ export function KanbanCard({ card, isOverlay, onEdit }: KanbanCardProps) {
                                 <span className="text-[10px]">{card.comments.length}</span>
                             </div>
                         )}
+                        {card.subtasks && card.subtasks.length > 0 && (
+                            <div className="flex items-center gap-1 text-notion-text-muted">
+                                <CheckSquare size={12} />
+                                <span className="text-[10px]">
+                                    {card.subtasks.filter(s => s.completed).length}/{card.subtasks.length}
+                                </span>
+                            </div>
+                        )}
                         <button
                             className="p-1 text-notion-text-muted hover:text-notion-text hover:bg-notion-hover rounded transition-colors"
                             onClick={(e) => {
@@ -145,15 +153,19 @@ export function KanbanCard({ card, isOverlay, onEdit }: KanbanCardProps) {
 
                     {card.attachments && card.attachments.length > 0 && (
                         <div className="flex flex-col gap-1">
-                            {card.attachments.map(file => (
-                                <div
-                                    key={file}
-                                    className="flex items-center gap-2 p-1.5 rounded bg-notion-hover/50 hover:bg-notion-hover border border-notion-border/40 transition-colors group/file text-notion-text-muted hover:text-notion-text"
-                                >
-                                    <FileText size={12} className="group-hover/file:text-blue-400 transition-colors" />
-                                    <span className="text-[10px] font-medium truncate">{file}</span>
-                                </div>
-                            ))}
+                            {card.attachments.map((file, index) => {
+                                const fileName = typeof file === 'string' ? file : file.name;
+                                const fileKey = typeof file === 'string' ? file : (file.id || index);
+                                return (
+                                    <div
+                                        key={fileKey}
+                                        className="flex items-center gap-2 p-1.5 rounded bg-notion-hover/50 hover:bg-notion-hover border border-notion-border/40 transition-colors group/file text-notion-text-muted hover:text-notion-text"
+                                    >
+                                        <FileText size={12} className="group-hover/file:text-blue-400 transition-colors" />
+                                        <span className="text-[10px] font-medium truncate">{fileName}</span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

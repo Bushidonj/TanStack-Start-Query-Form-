@@ -274,4 +274,25 @@ export const taskService = {
       throw error;
     }
   },
+
+  // Upload de anexo
+  async uploadAttachment(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post('/uploads', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data; // Retorna { name, url, size, type }
+  },
+
+  // Remover anexo
+  async removeAttachment(filename: string) {
+    const response = await api.delete(`/uploads/${filename}`);
+    return response.data;
+  },
 };
+
