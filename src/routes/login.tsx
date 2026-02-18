@@ -90,6 +90,7 @@ function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="off"
                   className="w-full pl-10 pr-4 py-3 bg-notion-hover border border-notion-border rounded-lg text-notion-text placeholder-notion-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="seu@email.com"
                   required
@@ -108,6 +109,7 @@ function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="w-full pl-10 pr-12 py-3 bg-notion-hover border border-notion-border rounded-lg text-notion-text placeholder-notion-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="••••••••"
                   required
@@ -148,18 +150,18 @@ function LoginPage() {
 
           {/* Demo Credentials */}
           <div className="mt-6 pt-6 border-t border-notion-border">
-            <p className="text-xs text-notion-text-muted text-center">
+            <div className="text-xs text-notion-text-muted text-center">
               <strong>Credenciais de demonstração (Base):</strong><br />
               <p>E-mail: allan.azevedo@gmail.com</p>
               <p>Senha: 12345678</p>
-            </p>
+            </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-xs text-notion-text-muted">
-            Inspirado no design minimalista 
+            Inspirado no design minimalista
           </p>
         </div>
       </div>
