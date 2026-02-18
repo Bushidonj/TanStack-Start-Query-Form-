@@ -14,7 +14,10 @@ Criar um frontend moderno inspirado no Notion (modo escuro), utilizando obrigato
 Este projeto NÃO terá backend neste momento.
 Todos os dados devem ser mockados em memória.
 
-Não implementar autenticação.
+### Autenticação (Implementação Atual)
+- Implementar autenticação real conectada ao backend NestJS.
+- Utilizar `accessToken` e `refreshToken` para gestão de sessão.
+- **Importante**: Por simplicidade inicial, os tokens serão armazenados no `localStorage`. Em uma etapa futura, a implementação deve ser movida para Cookies `httpOnly` visando maior segurança.
 
 O foco é criar uma UI/UX estruturada, moderna e organizada, preparada para futura integração com API.
 
@@ -200,3 +203,28 @@ Requisitos de Qualidade
 - Interface moderna
 - Responsivo básico
 - Fácil manutenção
+
+___________________________________________
+
+# 📋 Análise: Situação Atual vs Requisitos da Tarefa
+
+| Componente | Requisito | Status Atual | Status |
+| :--- | :--- | :--- | :--- |
+| **Backend** | NestJS | NestJS | ✅ OK |
+| **Banco** | PostgreSQL + Drizzle | PostgreSQL + Drizzle | ✅ OK |
+| **Auth** | Better-Auth Real | JWT manual (simulado) | ❌ Pendente |
+| **Async** | BullMQ + Redis + Zod | Não implementado | ❌ Pendente |
+| **Frontend** | TanStack Start | Implementação Inicial | [/] Em Progresso |
+
+## 🎯 Roadmap de Evolução
+
+### Fase 1 - Better-Auth Real (Prioridade Alta)
+- [ ] Integrar login com fluxo real do Better-Auth no Backend.
+- [ ] Atualizar frontend para lidar com sessions do Better-Auth.
+
+### Fase 2 - BullMQ + Redis (Prioridade Média)
+- [ ] Implementar processamento assíncrono no backend.
+
+### Fase 3 - Frontend TanStack Start
+- [ ] Migrar listagem de Kanban para usar TanStack Query real (sem mocks).
+- [ ] Implementar formulários com TanStack Form + Zod.

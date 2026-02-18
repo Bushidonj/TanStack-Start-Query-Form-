@@ -1,7 +1,9 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { useRouter } from '@tanstack/react-router'
 
 import Sidebar from '../components/sidebar/Sidebar'
 import appCss from '../styles.css?url'
@@ -42,10 +44,28 @@ export const Route = createRootRoute({
       }
     ],
   }),
-  shellComponent: RootDocument,
+  component: RootDocument,
 })
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    // Verificar status de autenticação apenas no cliente
+    if (typeof window !== 'undefined') {
+      const authenticated = localStorage.getItem('isAuthenticated') === 'true'
+      setIsAuthenticated(authenticated)
+      setIsLoading(false)
+
+      // Redirecionar para login se não estiver autenticado e não estiver na página de login
+      if (!authenticated && window.location.pathname !== '/login') {
+        router.navigate({ to: '/login' })
+      }
+    }
+  }, [router])
+
   return (
     <html lang="pt-br">
       <head>
@@ -53,12 +73,22 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <QueryClientProvider client={queryClient}>
-          <div className="flex h-screen w-full overflow-hidden bg-notion-bg text-notion-text">
-            <Sidebar />
-            <main className="flex-1 overflow-auto relative">
-              {children}
-            </main>
-          </div>
+          {isLoading ? (
+            <div className="min-h-screen bg-notion-bg flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : !isAuthenticated ? (
+            <div className="min-h-screen bg-notion-bg text-notion-text">
+              <Outlet />
+            </div>
+          ) : (
+            <div className="flex h-screen w-full overflow-hidden bg-notion-bg text-notion-text">
+              <Sidebar />
+              <main className="flex-1 overflow-auto relative">
+                <Outlet />
+              </main>
+            </div>
+          )}
           <TanStackDevtools
             config={{
               position: 'bottom-right',

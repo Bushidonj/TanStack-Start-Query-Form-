@@ -1,9 +1,18 @@
-import { Link } from '@tanstack/react-router';
-import { ChevronDown, FileText, Layout, Search, Settings, Clock, Plus } from 'lucide-react';
+import { Link, useRouter } from '@tanstack/react-router';
+import { ChevronDown, FileText, Layout, Search, Settings, Clock, Plus, LogOut } from 'lucide-react';
 import { useState } from 'react';
+import { authService } from '../../services/auth.service';
 
 export default function Sidebar() {
     const [isGeralExpanded, setIsGeralExpanded] = useState(true);
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        console.log('[Auth] Attempting logout...');
+        await authService.logout();
+        console.log('[Auth] ✅ Logout successful');
+        router.navigate({ to: '/login' });
+    };
 
     return (
         <aside className="w-64 bg-notion-sidebar border-r border-notion-border flex flex-col h-full select-none">
@@ -63,6 +72,13 @@ export default function Sidebar() {
             {/* Footer Tools */}
             <div className="p-2 border-t border-notion-border">
                 <SidebarItem icon={<Plus size={16} />} label="Novo Quadro" />
+                <div
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 p-2 rounded cursor-pointer transition-colors group text-notion-text-muted hover:bg-notion-hover hover:text-notion-text mt-1"
+                >
+                    <LogOut size={16} />
+                    <span className="text-sm font-medium">Sair</span>
+                </div>
             </div>
         </aside>
     );

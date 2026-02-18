@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { INITIAL_COLUMNS } from '../mock/kanbanData'
 import type { Card, CardStatus } from '../types/kanban'
@@ -23,14 +23,21 @@ export const Route = createFileRoute('/')({
 })
 
 function KanbanPage() {
+  const router = useRouter()
   const { cards, moveCard, updateCard, addCard, isLoading } = useKanban()
   const [activeCard, setActiveCard] = useState<Card | null>(null)
   const [editingCard, setEditingCard] = useState<Card | null>(null)
   const [isMounted, setIsMounted] = useState(false)
 
+  // Verificar autenticação
   useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+    if (!isAuthenticated) {
+      router.navigate({ to: '/login' })
+      return
+    }
     setIsMounted(true)
-  }, [])
+  }, [router])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
