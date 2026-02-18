@@ -2,15 +2,21 @@ import { Link, useRouter } from '@tanstack/react-router';
 import { ChevronDown, FileText, Layout, Search, Settings, Clock, Plus, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { authService } from '../../services/auth.service';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Sidebar() {
     const [isGeralExpanded, setIsGeralExpanded] = useState(true);
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const handleLogout = async () => {
         console.log('[Auth] Attempting logout...');
         await authService.logout();
         console.log('[Auth] ✅ Logout successful');
+
+        // Invalida a query de sessão para forçar o RootLayout a atualizar
+        queryClient.invalidateQueries({ queryKey: ['session'] });
+
         router.navigate({ to: '/login' });
     };
 

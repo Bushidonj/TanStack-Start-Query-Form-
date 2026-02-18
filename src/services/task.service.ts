@@ -135,7 +135,12 @@ export const taskService = {
               description: task.description || '',
               responsible: responsible,
               status: reverseStatusMap[task.status] || 'Backlog',
-              deadline: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+              // support both camelCase and snake_case coming from backend
+              deadline: task.dueDate
+                  ? new Date(task.dueDate).toISOString().split('T')[0]
+                  : task.due_date
+                      ? new Date(task.due_date).toISOString().split('T')[0]
+                      : '',
               priority: reversePriorityMap[task.priority] as 'Baixa' | 'Média' | 'Urgente' || 'Baixa',
               tags: task.tags || [],
               comments: task.comments || [],
@@ -175,7 +180,8 @@ export const taskService = {
         description: task.description,
         status: statusMap[task.status],
         priority: priorityMap[task.priority],
-        due_date: task.deadline ? new Date(task.deadline).toISOString() : null,
+        // camelCase key to match API contract
+        dueDate: task.deadline ? new Date(task.deadline).toISOString() : null,
         responsible: task.responsible.map(r => r.id),
         tags: task.tags,
         comments: task.comments,
@@ -193,7 +199,12 @@ export const taskService = {
         description: createdTask.description || '',
         responsible: createdTask.responsible || [],
         status: reverseStatusMap[createdTask.status] || 'Backlog',
-        deadline: createdTask.due_date ? new Date(createdTask.due_date).toISOString().split('T')[0] : '',
+        // backend may send either dueDate or due_date depending on implementation
+        deadline: createdTask.dueDate 
+            ? new Date(createdTask.dueDate).toISOString().split('T')[0] 
+            : createdTask.due_date 
+                ? new Date(createdTask.due_date).toISOString().split('T')[0] 
+                : '',
         priority: reversePriorityMap[createdTask.priority] as 'Baixa' | 'Média' | 'Urgente' || 'Baixa',
         tags: createdTask.tags || [],
         comments: createdTask.comments || [],
@@ -216,7 +227,8 @@ export const taskService = {
         description: task.description,
         status: statusMap[task.status],
         priority: priorityMap[task.priority],
-        due_date: task.deadline ? new Date(task.deadline).toISOString() : null,
+        // camelCase key to match API contract
+        dueDate: task.deadline ? new Date(task.deadline).toISOString() : null,
         responsible: task.responsible.map(r => r.id),
         tags: task.tags,
         comments: task.comments,
@@ -234,7 +246,11 @@ export const taskService = {
         description: updatedTask.description || '',
         responsible: updatedTask.responsible || [],
         status: reverseStatusMap[updatedTask.status] || 'Backlog',
-        deadline: updatedTask.due_date ? new Date(updatedTask.due_date).toISOString().split('T')[0] : '',
+        deadline: updatedTask.dueDate 
+            ? new Date(updatedTask.dueDate).toISOString().split('T')[0] 
+            : updatedTask.due_date 
+                ? new Date(updatedTask.due_date).toISOString().split('T')[0] 
+                : '',
         priority: reversePriorityMap[updatedTask.priority] as 'Baixa' | 'Média' | 'Urgente' || 'Baixa',
         tags: updatedTask.tags || [],
         comments: updatedTask.comments || [],
@@ -274,4 +290,25 @@ export const taskService = {
       throw error;
     }
   },
+
+  // Upload de anexo
+  async uploadAttachment(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post('/uploads', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data; // Retorna { name, url, size, type }
+  },
+
+  // Remover anexo
+  async removeAttachment(filename: string) {
+    const response = await api.delete(`/uploads/${filename}`);
+    return response.data;
+  },
 };
+

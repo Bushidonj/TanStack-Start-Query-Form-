@@ -57,10 +57,34 @@ export function useKanban() {
   });
 
   // Mutation para mover card (mudar status)
+  // Incluir o card completo na atualização para evitar que o backend
+  // sobrescreva campos ausentes (ex: responsáveis) quando a rota PATCH
+  // for chamada com apenas { status }. A API parece zerar listas não
+  // informadas.
   const moveCardMutation = useMutation({
-    mutationFn: ({ cardId, newStatus }: { cardId: string; newStatus: CardStatus }) => 
-      taskService.moveTask(cardId, newStatus),
-    onSuccess: () => {
+    mutationFn: async ({ cardId, newStatus }: { cardId: string; newStatus: CardStatus }) => {
+      // carregar o cartão mais recente do cache
+      const cardsCache: any[] = queryClient.getQueryData(['cards']) || [];
+      const card = cardsCache.find(c => c.id === cardId);
+      if (!card) {
+        throw new Error(`Card with id ${cardId} not found in cache`);
+      }
+      // enviar toda a task atualizada
+      return taskService.updateTask({ ...card, status: newStatus });
+    },
+    onMutate: async ({ cardId, newStatus }: { cardId: string; newStatus: CardStatus }) => {
+      // aplicar otimisticamente apenas a mudança de status
+      await queryClient.cancelQueries({ queryKey: ['cards'] });
+      const previousCards = queryClient.getQueryData(['cards']);
+      queryClient.setQueryData(['cards'], (old: any[] = []) =>
+        old.map(card => (card.id === cardId ? { ...card, status: newStatus } : card))
+      );
+      return { previousCards };
+    },
+    onError: (_error, _vars, context: any) => {
+      queryClient.setQueryData(['cards'], context.previousCards);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['cards'] });
     },
   });

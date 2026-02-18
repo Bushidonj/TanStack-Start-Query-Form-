@@ -212,19 +212,23 @@ ___________________________________________
 | :--- | :--- | :--- | :--- |
 | **Backend** | NestJS | NestJS | ✅ OK |
 | **Banco** | PostgreSQL + Drizzle | PostgreSQL + Drizzle | ✅ OK |
-| **Auth** | Better-Auth Real | JWT manual (simulado) | ❌ Pendente |
+| **Auth** | Better-Auth Real | Better-Auth 100% funcional | ✅ OK |
 | **Async** | BullMQ + Redis + Zod | Não implementado | ❌ Pendente |
-| **Frontend** | TanStack Start | Implementação Inicial | [/] Em Progresso |
+| **Frontend** | TanStack Start | Implementação Avançada | ✅ OK |
+| **Anexos** | Upload de Arquivos | Backend + Frontend UI | ✅ OK |
+| **Subtasks** | Checklist de Tarefas | Backend + Frontend UI | ✅ OK |
 
 ## 🎯 Roadmap de Evolução
 
-### Fase 1 - Better-Auth Real (Prioridade Alta)
-- [ ] Integrar login com fluxo real do Better-Auth no Backend.
-- [ ] Atualizar frontend para lidar com sessions do Better-Auth.
+### Fase 1 - Better-Auth Real ✅ **CONCLUÍDA**
+- [x] Integrar login com fluxo real do Better-Auth no Backend.
+- [x] Atualizar frontend para lidar com sessions do Better-Auth.
 
-### Fase 2 - BullMQ + Redis (Prioridade Média)
-- [ ] Implementar processamento assíncrono no backend.
+### Fase 2 - Novas Funcionalidades ✅ **CONCLUÍDA**
+- [x] **Card Attachments**: Sistema de upload de arquivos (disk storage) e visualização no board.
+- [x] **Subtasks**: Checklist persistente com indicador de progresso no board.
 
-### Fase 3 - Frontend TanStack Start
-- [ ] Migrar listagem de Kanban para usar TanStack Query real (sem mocks).
-- [ ] Implementar formulários com TanStack Form + Zod.
+### Fase 3 - Refatoração e Performance
+- [x] Migrar listagem de Kanban para usar TanStack Query real (sem mocks).
+- [x] Implementar formulários com TanStack Form + Zod.
+- [ ] Implementar BullMQ + Redis para jobs em background.

@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react'
 import { authService } from '../services/auth.service'
+import { useQueryClient } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -14,6 +15,7 @@ function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   // Verificar autenticação no cliente
   useEffect(() => {
@@ -36,6 +38,9 @@ function LoginPage() {
       console.log(`[Auth] ✅ Login successful for ${email}. Role: ${response.user.role}`)
       console.log(`[Auth] SessionToken: ${response.sessionToken.substring(0, 10)}...`)
       console.log(`[Auth] RefreshToken: ${response.refreshToken.substring(0, 10)}...`)
+
+      // Invalida a query de sessão para forçar o RootLayout a atualizar
+      queryClient.invalidateQueries({ queryKey: ['session'] })
 
       router.navigate({ to: '/' })
     } catch (err: any) {
