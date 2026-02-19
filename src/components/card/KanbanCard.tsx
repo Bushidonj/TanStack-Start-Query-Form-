@@ -1,7 +1,8 @@
-import { MoreHorizontal, FileText, Calendar, MessageSquare, CheckSquare } from 'lucide-react';
-import { formatLocalDate, parseLocalDate } from '../../utils/date';
+import { MoreHorizontal, FileText, Calendar, MessageSquare, CheckSquare, ArrowUpRight, Trash2 } from 'lucide-react';
+import { formatLocalDate } from '../../utils/date';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useState, useRef, useEffect } from 'react';
 import type { Card, Priority } from '../../types/kanban';
 import { STATUS_COLORS, STATUS_TITLE_COLORS } from '../../mock/kanbanData';
 
@@ -9,9 +10,13 @@ interface KanbanCardProps {
     card: Card;
     isOverlay?: boolean;
     onEdit?: () => void;
+    onDelete?: () => void;
 }
 
-export function KanbanCard({ card, isOverlay, onEdit }: KanbanCardProps) {
+export function KanbanCard({ card, isOverlay, onEdit, onDelete }: KanbanCardProps) {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
     const {
         attributes,
         listeners,
@@ -26,6 +31,16 @@ export function KanbanCard({ card, isOverlay, onEdit }: KanbanCardProps) {
             card,
         },
     });
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const bgMain = STATUS_COLORS[card.status]?.card || '#202020';
     const statusColorMap = STATUS_TITLE_COLORS[card.status] || '#373737';
@@ -63,13 +78,53 @@ export function KanbanCard({ card, isOverlay, onEdit }: KanbanCardProps) {
       `}
         >
             <div className="flex flex-col gap-3">
-                <div className="flex items-start gap-2">
-                    <div className="mt-1 text-notion-text-muted">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 0 0 0 2 2h12a2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 flex-1">
+                        <div className="mt-1 text-notion-text-muted">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        </div>
+                        <h3 className="text-[13px] font-bold leading-tight text-notion-text uppercase tracking-tight">
+                            {card.title}
+                        </h3>
                     </div>
-                    <h3 className="text-[13px] font-bold leading-tight text-notion-text uppercase tracking-tight">
-                        {card.title}
-                    </h3>
+                    <div className="relative" ref={menuRef}>
+                        <button
+                            className="p-1 text-notion-text-muted hover:text-notion-text hover:bg-notion-hover rounded transition-colors flex-shrink-0"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setIsMenuOpen(!isMenuOpen)
+                            }}
+                        >
+                            <MoreHorizontal size={14} />
+                        </button>
+                        
+                        {isMenuOpen && (
+                            <div className="absolute top-full right-0 mt-1 w-40 bg-notion-sidebar border border-notion-border rounded-lg shadow-2xl z-[60] overflow-hidden">
+                                <div
+                                    className="flex items-center gap-2 p-2 hover:bg-notion-hover cursor-pointer transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setIsMenuOpen(false)
+                                        onEdit?.()
+                                    }}
+                                >
+                                    <ArrowUpRight size={14} className="text-notion-text-muted" />
+                                    <span className="text-sm text-notion-text">Abrir</span>
+                                </div>
+                                <div
+                                    className="flex items-center gap-2 p-2 hover:bg-notion-hover cursor-pointer transition-colors text-red-400"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setIsMenuOpen(false)
+                                        onDelete?.()
+                                    }}
+                                >
+                                    <Trash2 size={14} />
+                                    <span className="text-sm">Deletar</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex items-center justify-between mb-3">
@@ -102,15 +157,6 @@ export function KanbanCard({ card, isOverlay, onEdit }: KanbanCardProps) {
                                 </span>
                             </div>
                         )}
-                        <button
-                            className="p-1 text-notion-text-muted hover:text-notion-text hover:bg-notion-hover rounded transition-colors"
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                onEdit?.()
-                            }}
-                        >
-                            <MoreHorizontal size={14} />
-                        </button>
                     </div>
                 </div>
 

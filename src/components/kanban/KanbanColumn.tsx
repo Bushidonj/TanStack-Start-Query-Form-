@@ -8,10 +8,11 @@ interface KanbanColumnProps {
     column: Column;
     cards: Card[];
     onEditCard: (card: Card) => void;
+    onDeleteCard: (card: Card) => void;
     onAddCard: (status: CardStatus) => void;
 }
 
-export function KanbanColumn({ column, cards, onEditCard, onAddCard }: KanbanColumnProps) {
+export function KanbanColumn({ column, cards, onEditCard, onDeleteCard, onAddCard }: KanbanColumnProps) {
     const { setNodeRef } = useSortable({
         id: column.id,
         data: {
@@ -52,7 +53,12 @@ export function KanbanColumn({ column, cards, onEditCard, onAddCard }: KanbanCol
             >
                 <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
                     {cards.map(card => (
-                        <KanbanCard key={card.id} card={card} onEdit={() => onEditCard(card)} />
+                        <KanbanCard 
+                            key={card.id} 
+                            card={card} 
+                            onEdit={() => onEditCard(card)} 
+                            onDelete={() => onDeleteCard(card)}
+                        />
                     ))}
                 </SortableContext>
 

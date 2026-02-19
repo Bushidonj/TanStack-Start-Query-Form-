@@ -15,6 +15,7 @@ import type { DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import CardModal from '../components/modal/CardModal'
+import { ConfirmModal } from '../components/modal/ConfirmModal'
 import { KanbanColumn } from '../components/kanban/KanbanColumn'
 import { KanbanCard } from '../components/card/KanbanCard'
 
@@ -24,9 +25,10 @@ export const Route = createFileRoute('/')({
 
 function KanbanPage() {
   const router = useRouter()
-  const { cards, moveCard, updateCard, addCard, isInitialLoading, isMutationPending } = useKanban()
+  const { cards, moveCard, updateCard, addCard, deleteCard, isInitialLoading, isMutationPending } = useKanban()
   const [activeCard, setActiveCard] = useState<Card | null>(null)
   const [editingCard, setEditingCard] = useState<Card | null>(null)
+  const [cardToDelete, setCardToDelete] = useState<Card | null>(null)
   const [isMounted, setIsMounted] = useState(false)
 
   // Verificar autenticação
@@ -82,6 +84,16 @@ function KanbanPage() {
     }
   }
 
+  const handleDeleteCard = (card: Card) => {
+    setCardToDelete(card)
+  }
+
+  const confirmDeleteCard = () => {
+    if (cardToDelete) {
+      deleteCard(cardToDelete.id)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full bg-notion-bg">
       <header className="px-8 pt-8 pb-4">
@@ -124,6 +136,7 @@ function KanbanPage() {
                 column={column}
                 cards={cards.filter(c => c.status === column.id)}
                 onEditCard={setEditingCard}
+                onDeleteCard={handleDeleteCard}
                 onAddCard={(status) => {
                   const newCard: Card = {
                     id: `new-${Date.now()}`,
@@ -166,6 +179,19 @@ function KanbanPage() {
               card={cards.find(c => c.id === editingCard.id) || editingCard}
               onClose={() => setEditingCard(null)}
               onUpdate={editingCard.id.startsWith('new-') ? (card) => addCard(card) : updateCard}
+            />
+          )}
+
+          {cardToDelete && (
+            <ConfirmModal
+              isOpen={true}
+              onClose={() => setCardToDelete(null)}
+              onConfirm={confirmDeleteCard}
+              title="Deletar Card"
+              message={`Tem certeza que deseja deletar o card "${cardToDelete.title}"?`}
+              confirmText="Deletar"
+              cancelText="Cancelar"
+              type="delete"
             />
           )}
         </DndContext>
