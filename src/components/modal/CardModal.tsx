@@ -9,14 +9,12 @@ import {
     Users,
     CircleDot,
     ArrowDownCircle,
-    ArrowUpRight,
     ChevronLeft,
     ChevronRight,
     Trash2,
     Plus,
     FileText as FileTextIcon,
-    Paperclip,
-    MoreHorizontal
+    Paperclip
 } from 'lucide-react';
 import { authService } from '../../services/auth.service';
 import api from '../../services/api';
@@ -25,6 +23,8 @@ import { STATUS_COLORS, STATUS_CATEGORIES, STATUS_TITLE_COLORS, MOCK_USERS, DESC
 import { useState, useRef, useEffect } from 'react';
 import { taskService } from '../../services/task.service';
 import { parseLocalDate, formatLocalDate } from '../../utils/date';
+import { useCardModalUploadError } from '../../hooks/useCardModalUploadError';
+import FileUploadError from '../ui/FileUploadError';
 
 interface FormValues {
     title: string;
@@ -58,6 +58,9 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
     const calendarRef = useRef<HTMLDivElement>(null);
     const priorityRef = useRef<HTMLDivElement>(null);
     const tagsRef = useRef<HTMLDivElement>(null);
+    
+    // Hook para tratamento de erros de upload
+    const { uploadError, handleUploadError, clearError, hasError } = useCardModalUploadError();
 
     // Estados de usuários
     const [users, setUsers] = useState<ResponsibleUser[]>([]);
@@ -691,8 +694,10 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
                                                             try {
                                                                 const uploaded = await taskService.uploadAttachment(file);
                                                                 field.handleChange([...field.state.value, uploaded]);
+                                                                clearError(); // Limpar erro se upload for bem-sucedido
                                                             } catch (err) {
                                                                 console.error('[CardModal] ❌ Erro no upload:', err);
+                                                                handleUploadError(err); // Usar hook para tratar erro
                                                             }
                                                         }
                                                     }}
@@ -703,6 +708,16 @@ export default function CardModal({ card, onClose, onUpdate }: CardModalProps) {
                                 />
                             </PropertyItem>
                         </div>
+
+                        {/* Erro de Upload */}
+                        {hasError && (
+                            <div className="px-8 pb-4">
+                                <FileUploadError
+                                    error={uploadError}
+                                    onRetry={clearError}
+                                />
+                            </div>
+                        )}
 
                         {/* Description */}
                         <div className="space-y-2">
@@ -896,15 +911,6 @@ function TemplateOption({ icon, label, onClick, isLast }: { icon: React.ReactNod
             <span className="text-sm text-notion-text-muted group-hover/opt:text-notion-text transition-colors font-medium">
                 {label}
             </span>
-        </div>
-    );
-}
-
-function LayoutIcon({ status }: { status: CardStatus }) {
-    const color = STATUS_COLORS[status]?.column || '#373737';
-    return (
-        <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-full bg-notion-hover border border-notion-border">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
         </div>
     );
 }
