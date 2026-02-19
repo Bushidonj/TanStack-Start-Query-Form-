@@ -296,13 +296,31 @@ export const taskService = {
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await api.post('/uploads', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    return response.data; // Retorna { name, url, size, type }
+    try {
+      const response = await api.post('/uploads', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      console.log('[TaskService] ✅ Upload successful:', response.data);
+      return response.data; // Retorna { name, url, size, type }
+    } catch (error: any) {
+      console.error('[TaskService] ❌ Upload failed:', error);
+      
+      // Tratar erro de upload específico
+      if (error.response?.data?.error === 'UPLOAD_ERROR') {
+        // Lançar erro com estrutura tratada para o frontend
+        const uploadError = new Error(error.response.data.details?.userMessage || 'Erro no upload');
+        (uploadError as any).code = 'UPLOAD_ERROR';
+        (uploadError as any).details = error.response.data.details;
+        (uploadError as any).statusCode = error.response.data.statusCode;
+        throw uploadError;
+      }
+      
+      // Lançar erro original
+      throw error;
+    }
   },
 
   // Remover anexo
