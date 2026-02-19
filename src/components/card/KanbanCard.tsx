@@ -1,4 +1,4 @@
-import { MoreHorizontal, FileText, Calendar, MessageSquare, CheckSquare, ArrowUpRight, Trash2 } from 'lucide-react';
+import { MoreHorizontal, FileText, Calendar, MessageSquare, CheckSquare, ArrowUpRight, Trash2, ChevronDown } from 'lucide-react';
 import { formatLocalDate } from '../../utils/date';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -15,6 +15,7 @@ interface KanbanCardProps {
 
 export function KanbanCard({ card, isOverlay, onEdit, onDelete }: KanbanCardProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     const {
@@ -174,10 +175,40 @@ export function KanbanCard({ card, isOverlay, onEdit, onDelete }: KanbanCardProp
                     </div>
                 )}
 
-                <div className="flex items-center gap-2 text-notion-text-muted group/feat">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-60"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
-                    <span className="text-[10px] font-medium truncate">Criação de interface em código</span>
-                </div>
+                {card.description && (
+                    <div className="relative">
+                        <div 
+                            className={`text-[11px] text-notion-text-muted leading-relaxed overflow-hidden transition-all duration-300 ${
+                                isDescriptionExpanded ? 'max-h-32 overflow-y-auto' : 'max-h-12'
+                            }`}
+                        >
+                            {card.description}
+                        </div>
+                        
+                        {card.description.length > 50 && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsDescriptionExpanded(!isDescriptionExpanded);
+                                }}
+                                className="flex items-center gap-1 text-[10px] text-notion-text-muted hover:text-notion-text mt-1 transition-colors"
+                            >
+                                <ChevronDown 
+                                    size={12} 
+                                    className={`transition-transform duration-300 ${isDescriptionExpanded ? 'rotate-180' : ''}`}
+                                />
+                                <span>{isDescriptionExpanded ? 'Mostrar menos' : 'Mostrar mais'}</span>
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {!card.description && (
+                    <div className="flex items-center gap-2 text-notion-text-muted group/feat">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-60"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                        <span className="text-[10px] font-medium truncate">Criação de interface em código</span>
+                    </div>
+                )}
 
                 <div className="flex items-center gap-2">
                     <span
