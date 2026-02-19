@@ -27,9 +27,10 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwindcss": "^4.1.18",
-    "vite-tsconfig-paths": "^5.1.4"
-  },
-  "devDependencies": {
+    "vite-tsconfig-paths": "^5.1.4",
+    "react-markdown": "^8.0.7",
+    "remark-gfm": "^3.0.1"
+  },  "devDependencies": {
     "@tanstack/devtools-vite": "^0.3.11",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
